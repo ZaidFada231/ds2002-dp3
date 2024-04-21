@@ -27,6 +27,7 @@ def delete_message(handle):
 
 def get_message():
     messages = []
+    processed_messages = []
     try:
         while len(messages) < 10:
             response = sqs.receive_message(
@@ -42,15 +43,14 @@ def get_message():
                 print("Waiting for more messages...")
                 continue
 
-        sorted_messages = sorted(
-            [(int(msg['MessageAttributes']['order']['StringValue']), 
-              msg['MessageAttributes']['word']['StringValue'], 
-              msg['ReceiptHandle'])
-             for msg in messages],
-            key=lambda x: x[0]
-        )
+        for msg in messages:
+            order = msg['MessageAttributes']['order']['StringValue']
+            word = msg['MessageAttributes']['word']['StringValue']
+            processed_messages.append({'order': int(order), 'word': word})
 
-        phrase = ' '.join(word for _, word, _ in sorted_messages)
+        print(processed_messages)
+        sorted_messages = sorted(processed_messages, key=lambda x: x['order'])
+        phrase = ' '.join(item['word'] for item in sorted_messages)
         print("Assembled phrase:", phrase)
 
         with open('phrase.txt', 'w') as file:
